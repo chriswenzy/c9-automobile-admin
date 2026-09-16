@@ -21,6 +21,13 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
+    Dialog, 
+    DialogContent, 
+    DialogHeader, 
+    DialogTitle, 
+    DialogDescription 
+} from '@/components/ui/dialog';
+import { 
     Car, 
     Image as ImageIcon, 
     DollarSign, 
@@ -29,6 +36,7 @@ import {
     ArrowLeft, 
     Check, 
     X, 
+    XCircle,
     Upload, 
     Star, 
     Info, 
@@ -190,6 +198,31 @@ function ListVehicleFormContent() {
     const [area, setArea] = useState('');
     const [landmark, setLandmark] = useState('');
 
+    // Limit Modal state
+    const [showLimitModal, setShowLimitModal] = useState(false);
+    const [limitErrorMessage, setLimitErrorMessage] = useState('');
+
+    const handleListingError = (error: any, fallbackTitle: string = 'Submission Failed') => {
+        const errorMessage = error?.response?.data?.message || error?.message || 'Could not process listing step.';
+        const isLimitError = (errorMessage || '').toLowerCase().includes('limit') ||
+                             (errorMessage || '').toLowerCase().includes('plan') ||
+                             (errorMessage || '').toLowerCase().includes('upgrade');
+
+        if (isLimitError) {
+            setLimitErrorMessage(errorMessage);
+            setShowLimitModal(true);
+            toast.error('Listing Limit Reached', {
+                description: `${errorMessage}`,
+                action: {
+                    label: 'Upgrade Plan',
+                    onClick: () => router.push('/account?tab=billing')
+                }
+            });
+        } else {
+            toast.error(fallbackTitle, { description: errorMessage });
+        }
+    };
+
     // Queries
     const { data: makesData, isLoading: isLoadingMakes } = usePublicVehicleMakes();
     const { data: modelsData, isLoading: isLoadingModels } = usePublicVehicleModels(
@@ -350,7 +383,7 @@ function ListVehicleFormContent() {
                 setStep(2);
             }
         } catch (error: any) {
-            toast.error('Submission Failed', { description: error.response?.data?.message || 'Could not save specs.' });
+            handleListingError(error, 'Submission Failed');
         }
     };
 
@@ -443,7 +476,7 @@ function ListVehicleFormContent() {
                 setStep(3);
             }
         } catch (error: any) {
-            toast.error('Media upload failed', { description: error.response?.data?.message || 'Could not save images.' });
+            handleListingError(error, 'Media upload failed');
         }
     };
 
@@ -474,7 +507,7 @@ function ListVehicleFormContent() {
                 router.push('/account');
             }
         } catch (error: any) {
-            toast.error('Listing Failed', { description: error.response?.data?.message || 'Could not post listing.' });
+            handleListingError(error, 'Listing Failed');
         }
     };
 
@@ -512,8 +545,8 @@ function ListVehicleFormContent() {
                 toast.success('Draft Saved!', { description: 'You can complete your listing anytime from your Account.' });
                 router.push('/account');
             }
-        } catch (err) {
-            toast.error('Save Draft Failed');
+        } catch (err: any) {
+            handleListingError(err, 'Save Draft Failed');
         }
     };
 
@@ -1167,6 +1200,41 @@ function ListVehicleFormContent() {
                     </AnimatePresence>
                 </CardContent>
             </Card>
+
+            {/* Listing Limit / Upgrade Plan Modal */}
+            <Dialog open={showLimitModal} onOpenChange={setShowLimitModal}>
+                <DialogContent className="sm:max-w-[440px] rounded-3xl p-6 border-none shadow-2xl text-center bg-white">
+                    <DialogHeader className="flex flex-col items-center space-y-3">
+                        <div className="w-16 h-16 rounded-full bg-rose-100 flex items-center justify-center text-rose-500">
+                            <XCircle size={36} />
+                        </div>
+                        <DialogTitle className="text-xl font-black text-slate-900">
+                            Listing Limit Reached
+                        </DialogTitle>
+                        <DialogDescription className="text-slate-600 font-medium text-sm text-center">
+                            {limitErrorMessage || 'Listing limit reached. Please upgrade your plan to add more.'}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="pt-4 flex flex-col gap-2.5">
+                        <Button
+                            onClick={() => {
+                                setShowLimitModal(false);
+                                router.push('/account?tab=billing');
+                            }}
+                            className="bg-[#003399] hover:bg-blue-800 text-white font-bold h-12 rounded-xl text-sm w-full shadow-lg shadow-blue-900/10"
+                        >
+                            Upgrade Plan
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            onClick={() => setShowLimitModal(false)}
+                            className="text-slate-500 hover:text-slate-700 font-semibold h-11 rounded-xl text-xs w-full"
+                        >
+                            Cancel
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
