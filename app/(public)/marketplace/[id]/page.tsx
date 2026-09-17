@@ -279,7 +279,7 @@ export default function CarDetailPage() {
         { label: 'Interior Color', val: basicInfo.interiorColor },
         { label: 'Condition', val: listing.condition || basicInfo.condition },
         { label: 'Reg. Status', val: basicInfo.registrationStatus },
-        { label: 'VIN / Chassis', val: basicInfo.vinChassisNumber || basicInfo.vin },
+        { label: 'VIN / Chassis', val: basicInfo.maskedVinChassisNumber || basicInfo.vinChassisNumber || basicInfo.vin || listing.maskedVinChassisNumber || listing.vinChassisNumber || listing.vin },
         { label: 'State', val: pricingAndLocation.state?.name },
         { label: 'City', val: locationData.city },
         { label: 'Area', val: locationData.area },
